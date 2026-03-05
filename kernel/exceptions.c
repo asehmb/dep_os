@@ -1,4 +1,5 @@
 #include "../drivers/uart.h"
+#include "scheduler/scheduler.h"
 #include "syscall.h"
 #include <stdint.h>
 
@@ -132,7 +133,16 @@ void handle_sync_exception(struct exception_frame *frame) {
 }
 
 void handle_irq_exception(struct exception_frame *frame) {
-  handle_exception("IRQ", frame);
+  uart_puts("Handling IRQ...\n");
+  uint64_t interrupt_id;
+  asm volatile("mrs %0, ICC_IAR1_EL1" : "=r"(interrupt_id));
+  switch (interrupt_id) {
+  case 30: // Timer interrupt
+    // Acknowledge the interrupt
+    asm volatile("msr ICC_EOIR1_EL1, %0" : : "r"(interrupt_id));
+    schedule(); // Call the scheduler to switch threads
+    break;
+  }
 }
 
 void handle_fiq_exception(struct exception_frame *frame) {

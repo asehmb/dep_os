@@ -18,7 +18,8 @@ LDFLAGS := -T linker.ld -nostdlib
 
 # ========= FILES =========
 BOOT_OBJS   := boot/bootloader.o boot/vectors.o  drivers/uart.o
-KERNEL_OBJS := kernel/kernel.o  kernel/exceptions.o
+SCHEDULER_OBJS := kernel/scheduler/scheduler.o kernel/scheduler/tcb.o kernel/scheduler/cpu_switch.o
+KERNEL_OBJS := kernel/kernel.o  kernel/exceptions.o $(SCHEDULER_OBJS)
 
 OBJS := $(BOOT_OBJS) $(KERNEL_OBJS)
 
