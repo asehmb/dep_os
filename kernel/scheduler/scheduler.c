@@ -3,17 +3,21 @@
 #include "../../drivers/uart.h"
 #include "tcb.h"
 
+#define TIMER_INTERVAL_TICKS 100000ULL
+
+void rearm_timer(void) {
+  uint64_t now;
+  uint64_t next_tick;
+  asm volatile("mrs %0, cntpct_el0" : "=r"(now));
+  next_tick = now + TIMER_INTERVAL_TICKS;
+  asm volatile("msr cntv_cval_el0, %0" : : "r"(next_tick));
+}
+
 void setup_timer() {
+  rearm_timer();
 
-  // Assuming frequency is 10MHz, 10ms = 100,000 ticks
-  // If frequency is 1MHz, 10ms = 10,000 ticks
-  uint64_t timer_ticks_for_10ms =
-      100000; // Adjust this value based on the timer frequency
-  asm volatile("msr cntp_tval_el0, %0" : : "r"(timer_ticks_for_10ms));
-
-  // Enable the timer
-  uint64_t timer_control_value = 1; // Enable the timer (bit 0)
-  asm volatile("msr cntp_ctl_el0, %0" : : "r"(timer_control_value));
+  uint64_t timer_control_value = 1; // Enable timer, unmask interrupt
+  asm volatile("msr cntv_ctl_el0, %0" : : "r"(timer_control_value));
 }
 
 void init_scheduler() {

@@ -3,6 +3,13 @@
 #include "syscall.h"
 #include <stdint.h>
 
+#define GICC_IAR (*(volatile uint32_t *)(0x08010000 + 0x0C))
+#define GICC_EOIR (*(volatile uint32_t *)(0x08010000 + 0x10))
+#define GICC_AIAR (*(volatile uint32_t *)(0x08010000 + 0x20))
+#define GICC_AEOIR (*(volatile uint32_t *)(0x08010000 + 0x24))
+#define GICC_HPPIR (*(volatile uint32_t *)(0x08010000 + 0x18))
+#define GICC_AHPPIR (*(volatile uint32_t *)(0x08010000 + 0x28))
+
 struct exception_frame {
   uint64_t x[31];
   uint64_t sp;
@@ -133,15 +140,31 @@ void handle_sync_exception(struct exception_frame *frame) {
 }
 
 void handle_irq_exception(struct exception_frame *frame) {
-  uart_puts("Handling IRQ...\n");
-  uint64_t interrupt_id;
-  asm volatile("mrs %0, ICC_IAR1_EL1" : "=r"(interrupt_id));
-  switch (interrupt_id) {
-  case 30: // Timer interrupt
-    // Acknowledge the interrupt
-    asm volatile("msr ICC_EOIR1_EL1, %0" : : "r"(interrupt_id));
-    schedule(); // Call the scheduler to switch threads
-    break;
+  (void)frame;
+  static uint32_t tick_count = 0;
+  int use_alias_eoir = 0;
+  uint32_t iar = GICC_IAR;
+  uint32_t interrupt_id = iar & 0x3FF;
+  if (interrupt_id == 1022) {
+    iar = GICC_AIAR;
+    interrupt_id = iar & 0x3FF;
+    use_alias_eoir = 1;
+  }
+  uint32_t hppir = GICC_HPPIR & 0x3FF;
+  if ((interrupt_id >= 26 && interrupt_id <= 31) ||
+      (interrupt_id == 0 && hppir == 1022)) {
+    rearm_timer();
+    tick_count++;
+    if ((tick_count % 100) == 0) {
+      uart_putc('.');
+    }
+  }
+  if (interrupt_id != 1023) {
+    if (use_alias_eoir) {
+      GICC_AEOIR = iar;
+    } else {
+      GICC_EOIR = iar;
+    }
   }
 }
 

@@ -123,7 +123,7 @@
     mov x0, sp // stack pointer is the first argument to the C handler (frame pointer)
     bl \c_handler
     RESTORE_EXCEPTION_CONTEXT
-    msr daifclr, #2 // enable interrupts (clear D bit in DAIF)
+    msr daifclr, #2 // enable IRQ
     eret
 .endm
 

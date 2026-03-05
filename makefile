@@ -49,7 +49,7 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 # ========= UTIL =========
 run: $(KERNEL_ELF)
 	qemu-system-aarch64 \
-	  -machine virt \
+	  -machine virt,gic-version=2 \
 	  -cpu cortex-a57 \
 	  -kernel $(KERNEL_ELF) \
 	  -nographic
