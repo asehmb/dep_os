@@ -142,8 +142,25 @@ vectors:
     b fiq_el1
     .space 0x7C
     b serr_el1
+    .space 0x7C
 
-    .space 0x400
+    b sync_el1
+    .space 0x7C
+    b irq_el1
+    .space 0x7C
+    b fiq_el1
+    .space 0x7C
+    b serr_el1
+    .space 0x7C
+
+    b sync_el1
+    .space 0x7C
+    b irq_el1
+    .space 0x7C
+    b fiq_el1
+    .space 0x7C
+    b serr_el1
+    .space 0x7C
 
 EXCEPTION_HANDLER sync_el1, handle_sync_exception
 EXCEPTION_HANDLER irq_el1, handle_irq_exception

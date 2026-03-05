@@ -1,4 +1,5 @@
 #include "../drivers/uart.h"
+#include "syscall.h"
 #include <stdint.h>
 
 struct exception_frame {
@@ -9,6 +10,8 @@ struct exception_frame {
   uint64_t esr_el1;
   uint64_t far_el1;
 };
+
+extern volatile uint64_t g_user_return_elr;
 
 static void uart_put_hex64(uint64_t value) {
   static const char hex[] = "0123456789ABCDEF";
@@ -81,14 +84,44 @@ void kernel_panic(struct exception_frame *frame) {
   }
 }
 
+uint64_t sysWrite(uint64_t fd, const char *buf, uint64_t count) {
+  if (fd == 1) { // stdout
+    for (uint64_t i = 0; i < count; i++) {
+      uart_putc(buf[i]);
+    }
+    return count;
+  }
+  return -1; // Invalid file descriptor
+}
+
 void handle_sync_exception(struct exception_frame *frame) {
-  uint32_t ec = (frame->elr_el1 >> 26) & 0x3F;
+  uint32_t ec = (frame->esr_el1 >> 26) & 0x3F;
 
   if (ec == 0x15) { // 0x15 is the code for an "SVC instruction"
-    uart_puts("System Call Triggered!\n");
-
     // Move the return address to the NEXT instruction
     frame->elr_el1 += 4;
+
+    switch (frame->x[8]) { // x8 holds the syscall number
+    case SYSCALL_WRITE:
+      frame->x[0] =
+          sysWrite(frame->x[0], (const char *)frame->x[1], frame->x[2]);
+      break;
+    case SYSCALL_EXIT:
+      uart_puts("Process exited with code ");
+      uart_put_hex64(frame->x[0]);
+      uart_puts("\n");
+      break;
+    default:
+      frame->x[0] = (uint64_t)-1;
+      break;
+    }
+
+    if (frame->x[8] == SYSCALL_EXIT && g_user_return_elr != 0) {
+      frame->elr_el1 = g_user_return_elr;
+      frame->spsr_el1 = 0x3C4; // EL1t with interrupts masked
+      g_user_return_elr = 0;
+    }
+
     return; // This returns to assembly, which calls RESTORE and eret
   } else {
     uart_puts("Unknown Sync Exception (EC=");

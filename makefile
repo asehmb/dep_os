@@ -17,8 +17,8 @@ ASFLAGS := -mcpu=cortex-a57
 LDFLAGS := -T linker.ld -nostdlib
 
 # ========= FILES =========
-BOOT_OBJS   := boot/bootloader.o boot/vectors.o kernel/print.o drivers/uart.o
-KERNEL_OBJS := kernel/kernel.o kernel/print.o kernel/exceptions.o
+BOOT_OBJS   := boot/bootloader.o boot/vectors.o  drivers/uart.o
+KERNEL_OBJS := kernel/kernel.o  kernel/exceptions.o
 
 OBJS := $(BOOT_OBJS) $(KERNEL_OBJS)
 
