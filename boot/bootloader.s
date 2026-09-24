@@ -4,25 +4,20 @@
 
 _start:
     msr     daifset, #0xf
-    ldr     x0, =stack_top
-    mov     sp, x0
+
+    msr spsel, #1 // set stack to sp_el1
     ldr     x0, =__exception_stack_top
-    msr     sp_el0, x0
+    mov     sp, x0
     
     ldr x0, =vectors
     msr vbar_el1, x0
+
     isb
 
     ldr     x0, =hello_world_string
-
     bl print_string
 
-
-    svc #0
-
-    ldr     x0, =hello_world_string
-    bl      print_string
-
+    isb
 
     bl kmain
 
@@ -56,7 +51,7 @@ print_string:
 
     .section .rodata,"a"
 hello_world_string:
-    .asciz "Hello World (AArch64)!\n"
+    .asciz "Hello from bootloader!\n"
 
 
 
@@ -67,3 +62,23 @@ hello_world_string:
 stack:
     .skip   4096
 stack_top:
+
+
+.section .page_tables, "aw", @nobits
+
+.align 12
+    // page tables
+
+
+    .global l0_table
+    .global l1_table
+    .global l2_table
+    .global l3_table
+l0_table:
+    .space 4096
+l1_table:
+    .space 4096
+l2_table:
+    .space 4096
+l3_table:
+    .space 4096

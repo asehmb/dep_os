@@ -103,6 +103,7 @@ uint64_t sysWrite(uint64_t fd, const char *buf, uint64_t count) {
 }
 
 void handle_sync_exception(struct exception_frame *frame) {
+  handle_exception("Sync", frame);
   uint32_t ec = (frame->esr_el1 >> 26) & 0x3F;
 
   if (ec == 0x15) { // 0x15 is the code for an "SVC instruction"
@@ -140,6 +141,8 @@ void handle_sync_exception(struct exception_frame *frame) {
 }
 
 void handle_irq_exception(struct exception_frame *frame) {
+
+  handle_exception("IRQ", frame);
   (void)frame;
   static uint32_t tick_count = 0;
   int use_alias_eoir = 0;
