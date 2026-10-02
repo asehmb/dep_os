@@ -93,24 +93,11 @@ void init_mem() {
   uart_putc(((el_level >> 2) & 0x3) + '0');
   uart_putc('\n');
 
-  // setup mair_el1
-  asm volatile("LDR X0, =0x00000000FF440400");
-  asm volatile("MSR mair_el1, x0");
-
-  // Setup TCR_EL1: 4KB granule, 48-bit VA regions for both TTBR0 & TTBR1,
-  // 48-bit Physical Address limit, Inner Shareable, Cacheable walks.
-  asm volatile("LDR      X0, =0x5B5103510");
-  asm volatile("MSR      TCR_EL1, X0");
-
   setup_tables();
-
-  enable_mmu();
-  uart_puts("MMU enabled!\n");
-
-  test_mmu_ram();
 
   return;
 }
+extern uintptr_t _kernel_end;
 
 void *alloc_page() {
   uart_puts("alloc_page");
@@ -118,6 +105,6 @@ void *alloc_page() {
   uintptr_t sp_val;
   // Reads the sp register and moves it into the sp_val variable
   __asm__ volatile("mov %0, sp" : "=r"(sp_val));
-  uart_puts((char *)sp_val);
+  uart_print_hex(sp_val);
   return NULL;
 }

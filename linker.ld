@@ -4,17 +4,18 @@ KERNEL_VIRT_BASE = 0xFFFF800000000000;
 KERNEL_PHYS_BASE = 0x40000000;
 
 SECTIONS {
-    . = 0x40000000;
+    . = KERNEL_PHYS_BASE + KERNEL_VIRT_BASE;
 
-    .text : {
+    .text : AT(ADDR(.text) - KERNEL_VIRT_BASE){
+        *(.text.boot)
         *(.text*)
     }
 
-    .rodata : {
+    .rodata : AT(ADDR(.rodata) - KERNEL_VIRT_BASE){
         *(.rodata*)
     }
 
-    .bss : {
+    .bss : AT(ADDR(.bss) - KERNEL_VIRT_BASE){
         *(.bss*)
         *(COMMON)
         . = ALIGN(16);
@@ -26,12 +27,13 @@ SECTIONS {
     /* Reserve 4KB-aligned space for early boot page tables */
     . = ALIGN(4096);
     __page_tables_start = .;
-    .page_tables (NOLOAD) : {
-        . += 4096 * 4; /* Space for 3 tables (L0, L1, L2 = 12KB) */
+    .page_tables (NOLOAD) : AT(ADDR(.page_tables) - KERNEL_VIRT_BASE) {
+        *(.page_tables)
     }
     __page_tables_end = .;
 
     /* Mark the absolute end of the loaded kernel image */
     . = ALIGN(4096);
+
     _kernel_end = .;
 }

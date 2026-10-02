@@ -41,3 +41,12 @@ void uart_puts(const char *str) {
     uart_putc(*str++);
   }
 }
+
+void uart_print_hex(uint64_t val) {
+  uart_puts("0x");
+  for (int i = 60; i >= 0; i -= 4) {
+    uint8_t nibble = (val >> i) & 0xF;
+    uart_putc(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
+  }
+  uart_putc('\n');
+}

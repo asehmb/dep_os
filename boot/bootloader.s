@@ -1,62 +1,85 @@
-    .section .text
-    .global _start
+    .section .text.boot
     .extern __exception_stack_top
 
+.global _start
 _start:
-    msr     daifset, #0xf
+    msr daifset, #0xf
+    msr spsel, #1
 
-    msr spsel, #1 // set stack to sp_el1
-    ldr     x0, =__exception_stack_top
-    mov     sp, x0
+
+    // temp stack
+    adrp x0, __exception_stack_top
+    add  x0, x0, :lo12:__exception_stack_top
+    mov  sp, x0
+
+    // Build bootstrap tables, setup MAIR/TCR, and set TTBRx_EL1
+    // setup mair_el1
+    LDR X0, =0x00000000FF440400
+    MSR mair_el1, x0
+
+    // 48-bit Physical Address limit, Inner Shareable, Cacheable walks.
+    LDR      X0, =0x5B5103510
+    MSR      TCR_EL1, X0
+
+    // setup boot tables
+    adrp x0, boot_l0
+    add  x0, x0, :lo12:boot_l0
+
+    adrp x1, boot_l1
+    add  x1, x1, :lo12:boot_l1
+
+    orr x2, x1, #3
+    
+    str x2, [x0, #0]
+
+    // index 256 (offset 2048) for 48 bit
+    str x2, [x0, #2048]
+
+    ldr x2, =0x00000401
+    str x2, [x1, #0]
+    ldr x2, =0x4000070D
+    str x2, [x1, #8]
+
+    // Setup TTBRx_EL1
+    msr ttbr0_el1, x0
+    msr ttbr1_el1, x0
+
+    // Enable the MMU
+    mrs x0, sctlr_el1
+    orr x0, x0, #1      // Enable MMU
+    orr x0, x0, #(1<<2) // Enable D-Cache
+    orr x0, x0, #(1<<12)// Enable I-Cache
+    msr sctlr_el1, x0
+    isb
+
+    //  The Jump to the Higher Half
+    ldr x0, =higher_half_entry
+    br x0
+
+higher_half_entry:
+
+    ldr x0, =__exception_stack_top
+    mov sp, x0
     
     ldr x0, =vectors
     msr vbar_el1, x0
-
     isb
 
-    ldr     x0, =hello_world_string
-    bl print_string
-
-    isb
 
     bl kmain
 
+// if fail to branch to main
 hang:
     wfe
     b hang
 
 
-    .equ UART0_BASE,  0x09000000
-    .equ UARTDR,      0x00
-    .equ UARTFR,      0x18
-    .equ UARTFR_TXFF, 0x20
-
-print_string:
-1:
-    ldrb    w1, [x0], #1
-    cbz     w1, 2f
-
-3:
-    ldr     x2, =UART0_BASE
-    ldr     w3, [x2, #UARTFR]
-    tst     w3, #UARTFR_TXFF
-    b.ne    3b
-
-    str     w1, [x2, #UARTDR]
-    b       1b
-
-2:
-    ret
-
-
     .section .rodata,"a"
-hello_world_string:
-    .asciz "Hello from bootloader!\n"
-
 
 
     .section .bss,"aw",@nobits
     .align  12
+
 
 
 stack:
@@ -68,7 +91,8 @@ stack_top:
 
 .align 12
     // page tables
-
+    boot_l0: .space 4096
+    boot_l1: .space 4096
 
     .global l0_table
     .global l1_table
