@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+extern uint64_t *dtb_ptr;
+
 extern uint64_t l0_table[];
 
 extern uint64_t l1_table[];

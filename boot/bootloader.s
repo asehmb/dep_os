@@ -7,6 +7,10 @@ _start:
     msr spsel, #1
 
 
+    // trying reading start of ram for dtb as x0 doesnt have it
+    mov x1, #0x40000000
+    mov x7, x1 // save x0, has device tree blob pointer
+    
     // temp stack
     adrp x0, __exception_stack_top
     add  x0, x0, :lo12:__exception_stack_top
@@ -44,6 +48,11 @@ _start:
     msr ttbr0_el1, x0
     msr ttbr1_el1, x0
 
+    // cleanup before mmu enablement
+    tlbi    vmalle1is
+    dsb     ish
+    isb
+
     // Enable the MMU
     mrs x0, sctlr_el1
     orr x0, x0, #1      // Enable MMU
@@ -60,10 +69,17 @@ higher_half_entry:
 
     ldr x0, =__exception_stack_top
     mov sp, x0
+    isb
     
     ldr x0, =vectors
     msr vbar_el1, x0
     isb
+
+    // store after mmu is ready
+    adrp x0, dtb_ptr
+    add x0, x0, :lo12:dtb_ptr
+    str x7, [x0]
+
 
 
     bl kmain
@@ -79,6 +95,8 @@ hang:
 
     .section .bss,"aw",@nobits
     .align  12
+    .global dtb_ptr
+    dtb_ptr: .space 8
 
 
 

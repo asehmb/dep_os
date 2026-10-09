@@ -57,6 +57,10 @@ int kprintf(const char *text, ...) {
         char *string = va_arg(ap, char *);
         uart_puts(string);
         schar++;
+      } else if (*schar == 'x') {
+        uint64_t hex = va_arg(ap, int);
+        uart_print_hex(hex);
+        schar++;
       }
     }
     uart_putc(*schar);

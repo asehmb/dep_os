@@ -3,7 +3,8 @@
 #ifndef DEPOS_UART_H
 #define DEPOS_UART_H
 
-#define UART0_BASE 0x09000000
+#define KERNEL_VIRT_BASE 0xFFFF800000000000
+#define UART0_BASE 0x09000000 + KERNEL_VIRT_BASE
 #define UARTDR (*(volatile unsigned int *)(UART0_BASE + 0x00))
 #define UARTFR (*(volatile unsigned int *)(UART0_BASE + 0x18))
 #define UARTFR_TXFF (1 << 5)

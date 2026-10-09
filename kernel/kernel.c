@@ -1,6 +1,5 @@
 
 
-#include "../drivers/uart.h"
 #include "../memory/memory.h"
 #include "klib/kprintf.h"
 #include "scheduler/scheduler.h"
@@ -23,8 +22,8 @@ void kmain() {
   /* init_gic_cpu_interface(); */
   init_scheduler();
   init_mem();
-  kprintf("Kernel Setup done!\n");
 
+  kprintf("Kernel Setup done!\n");
   while (1) {
     asm volatile("wfi");
   }

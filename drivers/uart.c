@@ -1,9 +1,5 @@
 
 #include "uart.h"
-#define UART0_BASE 0x09000000
-#define UARTDR (*(volatile unsigned int *)(UART0_BASE + 0x00))
-#define UARTFR (*(volatile unsigned int *)(UART0_BASE + 0x18))
-#define UARTFR_TXFF (1 << 5)
 
 void uart_putc(char c) {
   /* Wait until TX FIFO is not full */
@@ -48,5 +44,4 @@ void uart_print_hex(uint64_t val) {
     uint8_t nibble = (val >> i) & 0xF;
     uart_putc(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
   }
-  uart_putc('\n');
 }
